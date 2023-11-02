@@ -23,7 +23,10 @@ class AccountDB:
     def delete(self, account_num):
         index = self.__search_private(account_num)
         if index != -1:
+            print(self.account_database[index], 'successfully deleted')
             self.account_database.pop(index)
+        else:
+            print(account_num, 'not found, no account has been deleted')
 
     def __str__(self):
         s = ''
@@ -70,5 +73,10 @@ my_account_DB.search_public("0003").deposit(50)
 print(my_account_DB)
 my_account_DB.search_public("0003").withdraw(100)
 print(my_account_DB)
+my_account_DB.delete('0003')
+print(my_account_DB)
+my_account_DB.delete('0009')
+print(my_account_DB)
+
 my_account_DB.search_public("0010").deposit(50)
 print(my_account_DB)
