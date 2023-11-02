@@ -129,3 +129,32 @@ my_table2 = my_DB.search('countries')
 my_table3 = my_table1.join(my_table2, 'country')
 my_table3_filtered = my_table3.filter(lambda x: x['EU'] == 'no').filter(lambda x: float(x['temperature']) < 5.0)
 print(my_table3_filtered.table)
+
+print()
+countries_table = my_DB.search('countries')
+cities_table = my_DB.search('cities')
+combined_table = cities_table.join(countries_table, 'country')
+# Filter cities in EU that do not have coastlines
+my_table4 = combined_table.filter(lambda x : x['EU'] == 'yes').filter(lambda x: x['coastline'] == 'no')
+
+# Find and print its max temperature
+my_table5_max_temp = my_table4.aggregate(lambda x: max(x), 'temperature')
+print()
+print("Highest City's Temperature in EU that have no coastline")
+print(my_table5_max_temp)
+
+# Find and print its min temperature
+my_table5_min_temp = my_table4.aggregate(lambda x: min(x), 'temperature')
+print()
+print("Lowest City's Temperature in EU that have no coastline")
+print(my_table5_min_temp)
+
+countries_names = my_DB.search('countries')
+countries_names = countries_names.select('country')
+for i in countries_names:
+    j = i['country']
+    max_lat = combined_table.aggregate(lambda x: max(x), 'latitude')
+    min_lat = combined_table.aggregate(lambda x: min(x), 'latitude')
+    print()
+    print(j, 'highest latitude: ', max_lat)
+    print(j, 'lowest latitude: ', min_lat)
