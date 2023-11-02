@@ -1,4 +1,6 @@
-import csv, os
+import csv
+import os
+import copy
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -15,26 +17,115 @@ with open(os.path.join(__location__, 'Countries.csv')) as f:
     for r in rows:
         countries.append(dict(r))
 
-# Print the average temperature for all the cities in Italy
+
+class Database:
+    def __init__(self):
+        self.database = []
+
+    def insert(self, table):
+        """
+        add table object into database
+        :param table: Table Object
+        """
+        self.database.append(table)
+
+    def search(self, table_name):
+        """
+        Search for Table by its name
+        :param table_name: name of table
+        :return: Table object ,None if not found
+        """
+        for table in self.database:
+            if table.table_name == table_name:
+                return table
+        return None
+
+
+class Table:
+    def __init__(self, table_name, table):
+        self.table_name = table_name
+        self.table = table
+
+    def join(self, other, common_key):
+        """
+        Joins 2 Table together
+        :param other: Table Object
+        :param common_key: common key of 2 table
+        :return: joined table
+        """
+        joined_table = Table(self.table_name + '_joins_' + other.table_name,[])
+        for i in self.table:
+            for j in other.table:
+                if i[common_key] == j[common_key]:
+                    temp_dict = copy.deepcopy(i)
+                    temp_dict.update(copy.deepcopy(j))
+                    joined_table.table.append(temp_dict)
+        return joined_table
+
+    def filter(self, cond):
+        """
+        Filter the data of table
+        :param cond: condition(function)
+        :return: filtered table
+        """
+        filtered = Table(self.table_name + '_filtered', [])
+        for i in self.table:
+            if cond(i):
+                filtered.table.append(i)
+        return filtered
+
+    def aggregate(self, func, key):
+        """
+        Aggregate the table
+        :param func: Functions to aggregate
+        :param key: key to aggregate
+        :return: output of the function
+        """
+        temp = []
+        for i in self.table:
+            temp.append(float(i[key]))
+        return func(temp)
+
+    def select(self, attribute_list):
+        """
+        list of dict that follow attribute list
+        :param attribute_list: List of attribute
+        :return: Selected List
+        """
+        temp = []
+        for i in self.table:
+            temp_dict = {}
+            for j in i:
+                if j in attribute_list:
+                    temp_dict[j] = i[j]
+            temp.append(temp_dict)
+        return temp
+
+    def __str__(self):
+        return self.table_name + ':' + str(self.table)
+
+
+table1 = Table('cities', cities)
+table2 = Table('countries', countries)
+my_DB = Database()
+my_DB.insert(table1)
+my_DB.insert(table2)
+my_table1 = my_DB.search('cities')
+my_table1_filtered = my_table1.filter(lambda x: x['country'] == 'Italy')
+my_table1_selected = my_table1.select(['city', 'latitude'])
+print(my_table1)
+print()
+print(my_table1_selected)
+
 temps = []
-my_country = 'Italy'
-for city in cities:
-    if city['country'] == my_country:
-        temps.append(float(city['temperature']))
-print(sum(temps)/len(temps))
+for item in my_table1_filtered.table:
+    temps.append(float(item['temperature']))
+print(sum(temps) / len(temps))
+print("Using aggregation")
+print(my_table1_filtered.aggregate(lambda x: sum(x) / len(x), 'temperature'))
 
 print()
-# Print all cities that are not in the EU and whose average temperatures are below 5.0
-# Requires joining cities and countries
-import copy
-cities_ext = []
-for city in cities:
-    for country in countries:
-        if city['country'] == country['country']:
-            dict1 = copy.deepcopy(city)
-            dict2 = copy.deepcopy(country)
-            dict1.update(dict2)
-            cities_ext.append(dict1)
-for city in cities_ext:
-    if city['EU'] == 'no' and float(city['temperature']) < 5.0:
-        print(city)
+my_table2 = my_DB.search('countries')
+my_table3 = my_table1.join(my_table2, 'country')
+my_table3_filtered = my_table3.filter(lambda x: x['EU'] == 'no').filter(lambda x: float(x['temperature']) < 5.0)
+print(my_table3_filtered.table)
